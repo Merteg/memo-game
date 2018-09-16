@@ -1,0 +1,45 @@
+version: '3.1'
+services:
+    back:
+        image: python:2.7
+        container_name: pyserver
+        command: bash -c "pip install -r requirements.txt && python main.py"
+        environment:
+          - PYTHONUNBUFFERED=0
+        working_dir: /app/back
+        volumes:
+            - ./back:/app/back
+        depends_on:
+            - db
+        ports:
+            - 8000:8000
+    db:
+        image: postgres:9.6
+        restart: always
+        container_name: memo-postgres
+        environment:
+            POSTGRES_USER: admin
+            POSTGRES_PASSWORD: 1
+            POSTGRES_DB: game_memo
+        volumes:
+            - ~/.game-memo-postgres:/var/lib/postgresql/data
+        ports:
+            - 5432:5432
+    adminer:
+        image: dockette/adminer:full-php5
+        restart: always
+        depends_on:
+           - db
+        ports:
+         - 9008:80
+    front:
+        image: node:10
+        container_name: memo-react
+        command: bash -c "npm install && npm start"
+        working_dir: /app/front
+        volumes:
+            - ./front:/app/front
+        depends_on:
+            - back
+        ports:
+            - 3000:3000
