@@ -54,8 +54,19 @@ body {
     box-sizing: border-box;
 }
 
+.start-panel select {
+    display: block;
+    margin: 10px auto;
+}
+
+.start-panel button.disabled {
+    cursor: default;
+    background-color: black;
+}
+
 .start-panel button,
 #endBlock button {
+    cursor: pointer;
     background-color: #4CAF50; /* Green */
     border: none;
     color: white;
@@ -74,6 +85,7 @@ body {
     top: 10vh;
     left: 25vw;
     display: none;
+    background-color: #ddd; 
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     text-align: center;
 }

@@ -1,11 +1,14 @@
 import React, { Component } from 'react';
 import FlipCard from './FlipCard';
+import GameInfo from './GameInfo';
+import StartPanel from './StartPanel';
 import { shuffleArray, request } from '../utils';
+import { images } from '../config.json'
 
 
 class App extends Component {
-  constructor(props) {
-    super(props);
+  constructor() {
+    super();
     this.state = {
       openedCards: 0,
       closeCards: false,
@@ -19,18 +22,16 @@ class App extends Component {
       timerId: 0,
       nickname: '',
       ownRecord: 0,
-      gameId: 0
+      gameId: 0,
+      imgCount: 10,
     }
     this.openCardsControll = this.openCardsControll.bind(this);
   }
 
   componentDidMount() {
-    let arr = ['angularjs.png', 'backbone.png', 'cofeescript.jpeg', 'ember.png', 'index.png',
-      'meteor.png', 'mithriljs.png', 'react.png', 'typescript.jpg', 'vue.png'];
-
     this.setState({
-      imgArray: shuffleArray(arr),
-      cardCount: arr.length,
+      imgArray: images,
+      cardCount: images.length,
     });
   }
 
@@ -46,6 +47,7 @@ class App extends Component {
         let points = this.state.nextAddPoints;
         let cardCount = this.state.cardCount;
 
+        // If the images are the same
         if (this.state.imgArray[this.state.openIds[0]]
           === this.state.imgArray[this.state.openIds[1]]) {
           for (let i = 0; i < flipBlocks.length; i++) {
@@ -53,25 +55,26 @@ class App extends Component {
               flipBlocks[i].style.display = 'none';
             }
           }
+
           const newTotal = score + points - this.state.gameTime;
           this.setState({
             totalScore: newTotal,
             cardCount: cardCount - 2,
           });
+
           let requestData = {
             nickname: this.state.nickname,
             score: newTotal
           }
-
           if (this.state.gameId) {
             requestData.id = this.state.gameId;
           }
-
           request('/game-score', 'POST', JSON.stringify(requestData)).then(data => {
             if ('id' in data) {
               this.setState({ gameId: data.id });
             }
-          })
+          });
+
           if (cardCount - 2 === 0) {
             clearInterval(this.state.timerId);
             document.getElementById('endBlock').style.display = 'block';
@@ -103,27 +106,32 @@ class App extends Component {
   }
 
   startGame = e => {
+    let imgArr = images.slice(0, this.state.imgCount);
+
     this.setState({
       startTime: new Date(),
+      imgArray: shuffleArray(imgArr),
+      cardCount: this.state.imgCount * 2,
     });
+
     const timerId = setInterval(function () {
       let now = new Date()
       this.setState({
         gameTime: Math.round((now - this.state.startTime) / 1000),
       })
     }.bind(this), 1000);
+
     this.setState({ timerId: timerId })
+
     request(`/record/${this.state.nickname}`).then(data => {
-      if('record' in data) this.setState({ ownRecord: data.record });
+      if ('record' in data) this.setState({ ownRecord: data.record });
     })
     e.currentTarget.parentElement.parentElement.style.display = 'none';
   }
 
-  nicknameHandler = e => {
-    this.setState({
-      nickname: e.currentTarget.value,
-    })
-  }
+  nicknameHandler = e => this.setState({ nickname: e.currentTarget.value.trim() });
+
+  difficultHadler = e => this.setState({ imgCount: parseInt(e.target.value, 10) });
 
   renderCards() {
     return (
@@ -146,28 +154,24 @@ class App extends Component {
     )
   }
 
-  reloadPage() {
-    window.location.reload();
-  }
+  reloadPage = () => window.location.reload();
 
   render() {
     return (
       <div className="App">
-        <div className="start-panel">
-          <div className="start-wrap">
-            <label htmlFor="nickname-input">Nickname</label>
-            <input id="nickname-input" type="text" placeholder="Your Nickame" onChange={this.nicknameHandler} />
-            <button onClick={this.startGame}>Start</button>
-          </div>
-        </div>
-        <div className="game-info">
-          <div className="info-item">
-            <span className="nick-field">{this.state.nickname}</span>
-          </div>
-          <div className="info-item">Your score: {this.state.totalScore}</div>
-          <div className="info-item">Time left: {this.state.gameTime}</div>
-          <div className="info-item">Your record: {this.state.ownRecord}</div>
-        </div>
+        <StartPanel
+          nicknameHandler={this.nicknameHandler}
+          nickname={this.state.nickname}
+          difficultHadler={this.difficultHadler}
+          selectValue={this.state.imgCount}
+          startGame={this.startGame}
+        />
+        <GameInfo
+          nickname={this.state.nickname}
+          score={this.state.totalScore}
+          gameTime={this.state.gameTime}
+          record={this.state.ownRecord}
+        />
         <div className="card-wrapper">
           {this.renderCards()}
         </div>
